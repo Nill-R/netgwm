@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 #       NetGWM (Network Gateway Manager) is a tool for
@@ -23,6 +23,8 @@
 #       You should have received a copy of the GNU General Public License
 #       along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys, os, stat
 import yaml
 import time
@@ -30,6 +32,7 @@ import socket
 import optparse
 import re
 import logging
+import six
 
 configfile  = '/etc/netgwm/netgwm.yml'
 logfile     = '/var/log/netgwm.log'
@@ -47,15 +50,15 @@ def main():
     if not os.path.isfile(options.config):
       parser.error('Config file (%s) not found.' % options.config)
 
-    config = yaml.load(open(options.config, 'r'))
+    config = yaml.load(open(options.config, 'r'),Loader=yaml.FullLoader)
     if not os.path.exists('/var/run/netgwm/'): os.mkdir('/var/run/netgwm/')
 
-    try:    gwstore = yaml.load(open(gwstorefile, 'r'))
+    try:    gwstore = yaml.load(open(gwstorefile, 'r'),Loader=yaml.FullLoader)
     except: gwstore = {}
 
     gateways = []
     if 'gateways' in config and not config['gateways'] is None:
-      for gw_identifier, gw_data in config['gateways'].iteritems():
+      for gw_identifier, gw_data in six.iteritems(config['gateways']):
           gateways.append(GatewayManager(gwstore, identifier=gw_identifier, **gw_data))
 
     currentgw = GatewayManager.get_current_gateway(gateways)
@@ -132,7 +135,7 @@ class GatewayManager:
 
     def check(self, check_sites):
         # Checking gateway status
-        print 'checking ' + self.identifier
+        print('checking ' + self.identifier)
         ipresult = not os.system('/sbin/ip route replace default %s table netgwm_check' % self.generate_route())
 
         if ipresult is True:
@@ -178,7 +181,7 @@ class GatewayManager:
 
     def setdefault(self):
         # Replacing route
-        print '/sbin/ip route replace default ' + self.generate_route()
+        print('/sbin/ip route replace default ' + self.generate_route())
         os.system('/sbin/ip route replace default ' + self.generate_route())
         logging.info('route replaced to: %s', self.generate_route())
 
